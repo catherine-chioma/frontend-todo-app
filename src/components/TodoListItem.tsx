@@ -1,35 +1,29 @@
+// src/components/TodoListItem.tsx
 import React from 'react';
 
-// Define the type for TodoItem
+// Define the prop types for TodoListItem component
 interface TodoItemProps {
   id: number;
   text: string;
-  completed: boolean;
-  onToggle: (id: number) => void;
+  completed: boolean;  // Changed from 'isCompleted' to 'completed'
+  onToggleComplete: (id: number) => void;
   onDelete: (id: number) => void;
 }
 
-const TodoListItem: React.FC<TodoItemProps> = ({ id, text, completed, onToggle, onDelete }) => {
+const TodoListItem: React.FC<TodoItemProps> = ({ id, text, completed, onToggleComplete, onDelete }) => {
   return (
-    <div className="todo-list-item">
-      <input
-        type="checkbox"
-        checked={completed}
-        onChange={() => onToggle(id)}  // Toggle completion state
+    <div style={{ marginBottom: '10px' }}>
+      <input 
+        type="checkbox" 
+        checked={completed}  // Use 'completed' here
+        onChange={() => onToggleComplete(id)} 
       />
-      <span
-        style={{
-          textDecoration: completed ? 'line-through' : 'none',
-          marginLeft: '10px',
-        }}
-      >
-        {text}
-      </span>
-      <button onClick={() => onDelete(id)} style={{ marginLeft: '10px' }}>
-        Delete
-      </button>
+      <span style={{ textDecoration: completed ? 'line-through' : 'none' }}>{text}</span>
+      <button onClick={() => onDelete(id)}>Delete</button>
     </div>
   );
 };
 
 export default TodoListItem;
+
+

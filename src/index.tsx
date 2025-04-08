@@ -1,19 +1,21 @@
-import React from 'react';
-import ReactDOM from 'react-dom/client';
-import './index.css';
-import App from './App';
-import reportWebVitals from './reportWebVitals';
+// index.tsx
+import React, { StrictMode } from "react";
+import ReactDOM from "react-dom/client"; // Updated import for React 18+
+import { FirebaseAppProvider } from "reactfire"; // Import FirebaseAppProvider
+import App from "./App"; // Import App component
+import { firebaseConfig } from './firebase'; 
 
-const root = ReactDOM.createRoot(
-  document.getElementById('root') as HTMLElement
-);
+import "./styles.css"; // Optional: If you have some global styles
+
+const root = ReactDOM.createRoot(document.getElementById("root") as HTMLElement); // Create root for React 18+
+
 root.render(
-  <React.StrictMode>
-    <App />
-  </React.StrictMode>
+  <StrictMode>
+    {/* Wrap the app in the FirebaseAppProvider to make Firebase available throughout the app */}
+    <FirebaseAppProvider firebaseConfig={firebaseConfig}>
+      <App />
+    </FirebaseAppProvider>
+  </StrictMode>
 );
 
-// If you want to start measuring performance in your app, pass a function
-// to log results (for example: reportWebVitals(console.log))
-// or send to an analytics endpoint. Learn more: https://bit.ly/CRA-vitals
-reportWebVitals();
+

@@ -1,30 +1,27 @@
-import React, { useState } from 'react';
+// src/components/TodoForm.tsx
+import React from 'react';
 
 interface TodoFormProps {
-  addTodo: (text: string) => void;
+  newTodo: string;
+  onAddTodo: () => void;
+  onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
 }
 
-const TodoForm: React.FC<TodoFormProps> = ({ addTodo }) => {
-  const [text, setText] = useState('');
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    addTodo(text);
-    setText(''); // Clear input after submission
-  };
-
+const TodoForm: React.FC<TodoFormProps> = ({ newTodo, onAddTodo, onChange }) => {
   return (
-    <form onSubmit={handleSubmit} className="todo-form">
+    <div style={{ marginBottom: '10px' }}>
       <input
         type="text"
-        value={text}
-        onChange={(e) => setText(e.target.value)}
-        placeholder="Add a new task..."
-        aria-label="New todo text"
-        className="todo-input"
+        value={newTodo}
+        onChange={onChange}
+        placeholder="Enter a new todo"
+        style={{ padding: '8px', width: '80%' }}
+        aria-label="Todo input"
       />
-      <button type="submit" className="todo-button">Add</button>
-    </form>
+      <button onClick={onAddTodo} style={{ padding: '8px', marginLeft: '10px' }}>
+        Add Todo
+      </button>
+    </div>
   );
 };
 

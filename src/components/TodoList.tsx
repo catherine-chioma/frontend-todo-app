@@ -1,44 +1,42 @@
-import React, { FC } from 'react';
+// src/components/TodoList.tsx
+import React from 'react';
+import TodoListItem from './TodoListItem';
 
-// Define the type for the TodoListItem props
-interface TodoListItemProps {
+interface Todo {
   id: number;
   text: string;
   isCompleted: boolean;
+}
+
+interface TodoListProps {
+  todos: Todo[];
   onToggleComplete: (id: number) => void;
   onDelete: (id: number) => void;
 }
 
-const TodoListItem: FC<TodoListItemProps> = ({ id, text, isCompleted, onToggleComplete, onDelete }) => {
+const TodoList: React.FC<TodoListProps> = ({ todos, onToggleComplete, onDelete }) => {
   return (
-    <div style={{ marginBottom: '10px', display: 'flex', alignItems: 'center' }}>
-      {/* Checkbox to toggle completion */}
-      <input 
-        type="checkbox" 
-        checked={isCompleted} 
-        onChange={() => onToggleComplete(id)} 
-      />
-      
-      {/* Todo text */}
-      <span 
-        style={{ 
-          textDecoration: isCompleted ? 'line-through' : 'none',
-          marginLeft: '10px',
-          flex: 1
-        }}
-      >
-        {text}
-      </span>
-      
-      {/* Delete button */}
-      <button 
-        onClick={() => onDelete(id)} 
-        style={{ marginLeft: '10px', cursor: 'pointer' }}
-      >
-        Delete
-      </button>
+    <div>
+      {todos.length > 0 ? (
+        todos.map(todo => (
+          <TodoListItem
+            key={todo.id}
+            id={todo.id}
+            text={todo.text}
+            completed={todo.isCompleted} // Change 'isCompleted' to 'completed'
+            onToggleComplete={onToggleComplete}
+            onDelete={onDelete}
+          />
+        ))
+      ) : (
+        <p>No todos available</p>
+      )}
     </div>
   );
-}
+};
 
-export default TodoListItem;
+export default TodoList;
+
+
+
+

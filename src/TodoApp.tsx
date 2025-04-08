@@ -1,86 +1,180 @@
-import React, { useState } from 'react';
-import TodoListItem from './TodoListItem';
-import './App.css';  // Path to the CSS file
-import TodoForm from './components/TodoForm';
-import TodoList from './components/TodoList';
+import React, { useState, useEffect } from 'react';
+import { useAuth } from './context/AuthContext'; // Import useAuth hook
+import { db } from './firebase'; // Import Firestore
+import { collection, addDoc, getDocs, updateDoc, deleteDoc, doc } from 'firebase/firestore';
+import { Button, TextField, Typography, List, ListItem, ListItemText, IconButton, Checkbox } from '@mui/material';
+import DeleteIcon from '@mui/icons-material/Delete';
+import { User } from 'firebase/auth'; // Import User from firebase/auth
 
-
-// Define the Todo interface
 interface Todo {
-  id: number;
+  id: string;
   text: string;
   isCompleted: boolean;
 }
 
 const TodoApp: React.FC = () => {
-  // State to manage the list of todos
+  const { user, logout } = useAuth(); // Use the custom hook to get user and logout functions
   const [todos, setTodos] = useState<Todo[]>([]);
-  
-  // State to manage the new todo text input
   const [newTodo, setNewTodo] = useState<string>('');
 
-  // Function to add a new todo
-  const handleAddTodo = () => {
+  // Fetch todos from Firestore
+  const fetchTodos = async () => {
+    const todosRef = collection(db, 'todos');
+    const querySnapshot = await getDocs(todosRef);
+    const todosList = querySnapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data(),
+    })) as Todo[];
+    setTodos(todosList);
+  };
+
+  useEffect(() => {
+    if (user) {
+      fetchTodos(); // Fetch todos only if the user is logged in
+    }
+  }, [user]); // Re-fetch todos when the user changes
+
+  const handleAddTodo = async () => {
     if (newTodo.trim()) {
-      const newTodoItem: Todo = {
-        id: Date.now(), // Using timestamp as unique ID
-        text: newTodo,
-        isCompleted: false,
-      };
-      setTodos([...todos, newTodoItem]);
-      setNewTodo(''); // Clear the input field after adding
+      try {
+        await addDoc(collection(db, 'todos'), {
+          text: newTodo,
+          isCompleted: false,
+        });
+        setNewTodo(''); // Reset the input field after adding
+        fetchTodos(); // Re-fetch todos to include the new one
+      } catch (error) {
+        console.error('Error adding document: ', error);
+      }
     }
   };
 
-  // Function to toggle the completion status of a todo
-  const handleToggleComplete = (id: number) => {
-    setTodos(todos.map(todo =>
-      todo.id === id ? { ...todo, isCompleted: !todo.isCompleted } : todo
-    ));
+  const handleToggleComplete = async (id: string, currentStatus: boolean) => {
+    const todoRef = doc(db, 'todos', id);
+    try {
+      await updateDoc(todoRef, {
+        isCompleted: !currentStatus,
+      });
+      fetchTodos(); // Re-fetch todos to reflect changes
+    } catch (error) {
+      console.error('Error updating document: ', error);
+    }
   };
 
-  // Function to delete a todo
-  const handleDelete = (id: number) => {
-    setTodos(todos.filter(todo => todo.id !== id));
+  const handleDelete = async (id: string) => {
+    const todoRef = doc(db, 'todos', id);
+    try {
+      await deleteDoc(todoRef);
+      fetchTodos(); // Re-fetch todos after deletion
+    } catch (error) {
+      console.error('Error deleting document: ', error);
+    }
   };
 
   return (
-    <div style={{ padding: '20px', maxWidth: '400px', margin: 'auto', fontFamily: 'Arial' }}>
-      <h1>Todo App</h1>
+    <div>
+      <Typography variant="h3" align="center" gutterBottom>
+        Todo App
+      </Typography>
 
-      {/* Input to add a new todo */}
-      <div style={{ marginBottom: '10px' }}>
-        <input
-          type="text"
-          value={newTodo}
-          onChange={(e) => setNewTodo(e.target.value)}
-          placeholder="Enter a new todo"
-          style={{ padding: '8px', width: '80%' }}
-        />
-        <button onClick={handleAddTodo} style={{ padding: '8px', marginLeft: '10px' }}>
-          Add Todo
-        </button>
-      </div>
+      {/* Conditional rendering based on authentication state */}
+      {user ? (
+        <>
+          <Typography variant="h6" align="center" gutterBottom>
+            Welcome, {user.displayName || user.email}
+          </Typography>
+          <Button variant="contained" color="secondary" onClick={logout}>
+            Logout
+          </Button>
 
-      {/* Render the list of TodoListItems */}
-      <div>
-        {todos.length > 0 ? (
-          todos.map(todo => (
-            <TodoListItem
-              key={todo.id}
-              id={todo.id}
-              text={todo.text}
-              isCompleted={todo.isCompleted}
-              onToggleComplete={handleToggleComplete}
-              onDelete={handleDelete}
+          {/* Todo input and button only show when the user is logged in */}
+          <div style={{ display: 'flex', marginBottom: '20px' }}>
+            <TextField
+              label="Enter a new todo"
+              variant="outlined"
+              fullWidth
+              value={newTodo}
+              onChange={(e) => setNewTodo(e.target.value)}
+              style={{ marginRight: '10px' }}
             />
-          ))
-        ) : (
-          <p>No todos available</p>
-        )}
-      </div>
+            <Button
+              variant="contained"
+              color="primary"
+              onClick={handleAddTodo}
+              disabled={!newTodo.trim()} // Disable button if input is empty
+            >
+              Add Todo
+            </Button>
+          </div>
+
+          {/* Display the list of todos */}
+          <List>
+            {todos.length > 0 ? (
+              todos.map(todo => (
+                <ListItem
+                  key={todo.id}
+                  style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    marginBottom: '10px',
+                    backgroundColor: '#fff',
+                    padding: '10px',
+                    borderRadius: '5px',
+                    boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)',
+                  }}
+                >
+                  <ListItemText
+                    primary={todo.text}
+                    style={{
+                      textDecoration: todo.isCompleted ? 'line-through' : 'none',
+                      color: todo.isCompleted ? '#888' : '#000',
+                    }}
+                  />
+                  <div>
+                    <Checkbox
+                      checked={todo.isCompleted}
+                      onChange={() => handleToggleComplete(todo.id, todo.isCompleted)}
+                      color="primary"
+                    />
+                    <IconButton onClick={() => handleDelete(todo.id)} color="secondary">
+                      <DeleteIcon />
+                    </IconButton>
+                  </div>
+                </ListItem>
+              ))
+            ) : (
+              <Typography variant="body1" align="center">
+                No todos available
+              </Typography>
+            )}
+          </List>
+        </>
+      ) : (
+        <>
+          {/* If user is not logged in, show login prompt */}
+          <Typography variant="h6" align="center" gutterBottom>
+            Please log in to manage your todos
+          </Typography>
+          <Button variant="contained" color="primary" onClick={() => console.log('Redirect to login')}>
+            Login
+          </Button>
+        </>
+      )}
     </div>
   );
 };
 
 export default TodoApp;
+
+
+
+
+
+
+
+
+
+
+
+
